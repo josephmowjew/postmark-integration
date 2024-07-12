@@ -55,9 +55,9 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
-			<artifactId>spring-kafka-test</artifactId>
-			<scope>test</scope>
+			<artifactId>spring-kafka</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -69,6 +69,7 @@
             <artifactId>postmark</artifactId>
             <version>1.10.0</version>
         </dependency>
+		
 	</dependencies>
 
 	<build>
