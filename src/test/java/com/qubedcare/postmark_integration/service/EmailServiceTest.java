@@ -1,18 +1,24 @@
 package com.qubedcare.postmark_integration.service;
 
 import com.qubedcare.postmark_integration.model.Client;
+import com.qubedcare.postmark_integration.exception.EmailGenerationException;
+import com.qubedcare.postmark_integration.exception.SendingFailureException;
 import com.postmarkapp.postmark.client.ApiClient;
 import com.postmarkapp.postmark.client.data.model.message.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class EmailServiceTest {
+class EmailServiceTest {
 
     @Mock
     private ApiClient postmarkClient;
@@ -23,32 +29,48 @@ public class EmailServiceTest {
     private EmailService emailService;
 
     @BeforeEach
-    public void setup() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         emailService = new EmailService(postmarkClient, guerrillaMailService);
         ReflectionTestUtils.setField(emailService, "fromEmail", "test@example.com");
+        ReflectionTestUtils.setField(emailService, "welcomeEmailSubject", "Welcome to Our Service");
+        ReflectionTestUtils.setField(emailService, "welcomeEmailTemplate", "Dear %s,\n\nWelcome to our service!");
+        ReflectionTestUtils.setField(emailService, "emailDomain", "lyvepulse.com");
     }
 
     @Test
-    public void testGenerateEmailAddress() throws Exception {
-        when(guerrillaMailService.getEmailAddress()).thenReturn("test@guerrillamail.com");
-        String email = emailService.generateEmailAddress("John Doe");
+    void generateEmailAddress_Success() throws IOException, EmailGenerationException {
+        when(guerrillaMailService.getEmailAddress()).thenReturn("random123@guerrillamail.com");
+        String generatedEmail = emailService.generateEmailAddress("John Doe");
+        assertEquals("random123@guerrillamail.com", generatedEmail);
         verify(guerrillaMailService, times(1)).getEmailAddress();
-        assert email.equals("test@guerrillamail.com");
     }
 
     @Test
-    public void testSendWelcomeEmail() throws Exception {
+    void generateEmailAddress_Failure() throws IOException {
+        when(guerrillaMailService.getEmailAddress()).thenThrow(new IOException("API Error"));
+        assertThrows(EmailGenerationException.class, () -> emailService.generateEmailAddress("John Doe"));
+    }
+
+    @Test
+    void sendWelcomeEmail_Success() throws Exception {
         Client client = new Client("1", "John Doe", "john@example.com");
-        
-        emailService.sendWelcomeEmail(client);
-        
-        verify(postmarkClient).deliverMessage(argThat((Message message) -> {
-            return "test@example.com".equals(message.getFrom()) &&
-                   "john@example.com".equals(message.getTo()) &&
-                   "Welcome to Our Service".equals(message.getSubject()) &&
-                   message.getHtmlBody().contains("Dear John Doe") &&
-                   message.getHtmlBody().contains("Welcome to our service!");
-        }));
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+       
+        when(postmarkClient.deliverMessage(any(Message.class))).thenReturn(null);
+        assertDoesNotThrow(() -> emailService.sendWelcomeEmail(client));
+        verify(postmarkClient).deliverMessage(messageCaptor.capture());
+        Message capturedMessage = messageCaptor.getValue();
+        assertEquals("test@example.com", capturedMessage.getFrom());
+        assertEquals("john@example.com", capturedMessage.getTo());
+        assertEquals("Welcome to Our Service", capturedMessage.getSubject());
+        assertTrue(capturedMessage.getHtmlBody().contains("Dear John Doe"));
+    }
+
+    @Test
+    void sendWelcomeEmail_Failure() throws Exception {
+        Client client = new Client("1", "John Doe", "john@example.com");
+        when(postmarkClient.deliverMessage(any(Message.class))).thenThrow(new RuntimeException("Sending failed"));
+        assertThrows(SendingFailureException.class, () -> emailService.sendWelcomeEmail(client));
     }
 }
