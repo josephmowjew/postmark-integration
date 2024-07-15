@@ -85,4 +85,5 @@ class KafkaConsumerIntegrationTest {
         verify(emailService, timeout(5000)).generateEmailAddress(client.getName());
         verify(emailService, timeout(5000)).sendWelcomeEmail(any(Client.class));
     }
+    
 }
