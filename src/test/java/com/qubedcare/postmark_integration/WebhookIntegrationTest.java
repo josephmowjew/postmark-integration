@@ -25,6 +25,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -49,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
     "postmark.webhook.secret=testSecret"
 })
+@ActiveProfiles("test")
 class WebhookIntegrationTest {
 
     @TestConfiguration
