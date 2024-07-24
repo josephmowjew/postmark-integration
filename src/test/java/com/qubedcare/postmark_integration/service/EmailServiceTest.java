@@ -18,6 +18,7 @@ import java.io.IOException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+
 @ActiveProfiles("test")
 class EmailServiceTest {
 
@@ -25,31 +26,30 @@ class EmailServiceTest {
     private ApiClient postmarkClient;
 
     @Mock
-    private GuerrillaMailService guerrillaMailService;
+    private GoogleWorkspaceService googleWorkspaceService;
 
     private EmailService emailService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        emailService = new EmailService(postmarkClient, guerrillaMailService);
+        emailService = new EmailService(postmarkClient, googleWorkspaceService);
         ReflectionTestUtils.setField(emailService, "fromEmail", "test@example.com");
         ReflectionTestUtils.setField(emailService, "welcomeEmailSubject", "Welcome to Our Service");
         ReflectionTestUtils.setField(emailService, "welcomeEmailTemplate", "Dear %s,\n\nWelcome to our service!");
-        ReflectionTestUtils.setField(emailService, "emailDomain", "lyvepulse.com");
     }
 
     @Test
     void generateEmailAddress_Success() throws IOException, EmailGenerationException {
-        when(guerrillaMailService.getEmailAddress()).thenReturn("random123@guerrillamail.com");
+        when(googleWorkspaceService.createUserAccount("John", "Doe")).thenReturn("john.doe@lyvepulse.com");
         String generatedEmail = emailService.generateEmailAddress("John Doe");
-        assertEquals("random123@guerrillamail.com", generatedEmail);
-        verify(guerrillaMailService, times(1)).getEmailAddress();
+        assertEquals("john.doe@lyvepulse.com", generatedEmail);
+        verify(googleWorkspaceService, times(1)).createUserAccount("John", "Doe");
     }
 
     @Test
     void generateEmailAddress_Failure() throws IOException {
-        when(guerrillaMailService.getEmailAddress()).thenThrow(new IOException("API Error"));
+        when(googleWorkspaceService.createUserAccount("John", "Doe")).thenThrow(new IOException("API Error"));
         assertThrows(EmailGenerationException.class, () -> emailService.generateEmailAddress("John Doe"));
     }
 

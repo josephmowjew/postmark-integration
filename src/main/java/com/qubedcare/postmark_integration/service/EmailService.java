@@ -17,7 +17,7 @@ import java.io.IOException;
 public class EmailService implements IEmailService {
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
     private final ApiClient postmarkClient;
-    private final GuerrillaMailService guerrillaMailService;
+    private final GoogleWorkspaceService googleWorkspaceService;
 
     @Value("${email.from.address}")
     private String fromEmail;
@@ -28,50 +28,22 @@ public class EmailService implements IEmailService {
     @Value("${email.welcome.template}")
     private String welcomeEmailTemplate;
 
-    @Value("${email.domain}")
-    private String emailDomain;
-
-    public EmailService(ApiClient postmarkClient, GuerrillaMailService guerrillaMailService) {
+    public EmailService(ApiClient postmarkClient, GoogleWorkspaceService googleWorkspaceService) {
         this.postmarkClient = postmarkClient;
-        this.guerrillaMailService = guerrillaMailService;
+        this.googleWorkspaceService = googleWorkspaceService;
     }
 
     @Override
     public String generateEmailAddress(String clientName) throws EmailGenerationException {
         try {
-            // Use GuerrillaMail to generate a temporary email address
-            String email = guerrillaMailService.getEmailAddress();
-            logger.info("Generated email address for client {}: {}", clientName, email);
-            return email;
+            String[] nameParts = clientName.split(" ", 2);
+            String firstName = nameParts[0];
+            String lastName = nameParts.length > 1 ? nameParts[1] : "";
+            return googleWorkspaceService.createUserAccount(firstName, lastName);
         } catch (IOException e) {
             logger.error("Failed to generate email address for client: {}", clientName, e);
             throw new EmailGenerationException("Failed to generate email address", e);
         }
-
-        // Future implementation (keep as comment for now):
-        /*
-        try {
-            // Check if the input is already an email address
-            if (clientName.contains("@")) {
-                String[] parts = clientName.split("@");
-                clientName = parts[0];
-            }
-
-            // Generate email based on client's name and domain
-            String emailPrefix = clientName.toLowerCase()
-                    .replaceAll("[^a-z0-9]", ".")
-                    .replaceAll("\\.+", ".") // Replace multiple dots with a single dot
-                    .replaceAll("^\\.|\\.$", ""); // Remove leading and trailing dots
-
-            String email = emailPrefix + "@" + emailDomain;
-           
-            logger.info("Generated email address for client {}: {}", clientName, email);
-            return email;
-        } catch (Exception e) {
-            logger.error("Failed to generate email address for client: {}", clientName, e);
-            throw new EmailGenerationException("Failed to generate email address", e);
-        }
-        */
     }
 
     @Override
