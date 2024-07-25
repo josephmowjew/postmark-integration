@@ -47,7 +47,7 @@ public class EmailService implements IEmailService {
     }
 
     @Override
-    @Retryable(value = SendingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
+    @Retryable(value = SendingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 5000, multiplier = 2))
     public void sendWelcomeEmail(Client client) throws SendingFailureException {
         String emailContent = String.format(welcomeEmailTemplate, client.getName());
         Message message = new Message(fromEmail, client.getEmailAddress(), welcomeEmailSubject, emailContent);

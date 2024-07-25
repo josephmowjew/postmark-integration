@@ -35,3 +35,4 @@ build/
 kafka-data/
 zookeeper-data/
 src/main/resources/google-workspace-credentials.json
+src/main/resources/client_secret.json

@@ -4,6 +4,8 @@ import com.qubedcare.postmark_integration.model.Client;
 import com.qubedcare.postmark_integration.service.EmailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CountDownLatch;
@@ -20,6 +22,9 @@ public class NewClientAlertConsumer {
         this.objectMapper = objectMapper;
     }
 
+    @RetryableTopic(
+        attempts = "5",
+        backoff = @Backoff(delay = 1000, multiplier = 2.0))
     @KafkaListener(topics = "${kafka.topic.new-client-alert}")
     public void consume(String message) throws Exception {
         System.out.println("Consumed message: " + message);
